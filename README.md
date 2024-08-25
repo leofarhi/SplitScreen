@@ -6,6 +6,7 @@ SplitScreen is a tool designed to split the display of an application with a spl
 
 - Split the screen of any software that uses split-screen rendering into two separate windows.
 - Customize the aspect ratio and border cropping to ensure the best possible display.
+- Press F11 to put a window in full screen
 
 ## Usage
 
