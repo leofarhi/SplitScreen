@@ -1,6 +1,6 @@
 # SplitScreen
 
-**SplitScreen** is a tool designed to split the display of an application using a split-screen rendering into two distinct windows.
+**SplitScreen** is a tool designed to split the display of an application using a split-screen rendering into multiple distinct windows.
 
 ## Features
 
