@@ -8,39 +8,61 @@ using System.Windows;
 using System.Windows.Interop;
 using Win32.Shared;
 
+using Newtonsoft.Json.Linq;
+
 namespace Win32.DwmThumbnail
 {
-    /// <summary>
-    /// App.xaml の相互作用ロジック
-    /// </summary>
     public partial class App : Application
     {
         public App()
         {
             string[] args = Environment.GetCommandLineArgs();
-
-            ConfigScreen configScreen = new ConfigScreen();
-            
-            if (args.Length > 1)
+            if (args.Length != 2)
             {
-                //args[1] = "16:9"
-                string[] aspectRatio = args[1].Split(':');
-                configScreen.aspectRatio = new Tuple<int, int>(int.Parse(aspectRatio[0]), int.Parse(aspectRatio[1]));
+                Console.WriteLine("Usage: SplitScreen.exe <json file>");
+                MessageBox.Show("Usage: SplitScreen.exe <json file>");
+                Shutdown();
+                return;
             }
-            else
-                configScreen.aspectRatio = new Tuple<int, int>(16, 9);
-            if (args.Length > 2)
+            Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            IntPtr _hWnd = new WindowPicker().PickCaptureTarget(new WindowInteropHelper(Application.Current.MainWindow).Handle);
+            Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
+    
+            if (_hWnd == IntPtr.Zero)
             {
-                //args[2] = "0,0,0,0"
-                string[] crop = args[2].Split(',');
-                configScreen.crop = new ConfigScreen.Border(int.Parse(crop[0]), int.Parse(crop[1]), int.Parse(crop[2]), int.Parse(crop[3]));
+                Console.WriteLine("No window selected or operation canceled.");
+                MessageBox.Show("No window selected or operation canceled.");
+                Shutdown();
+                return;
             }
-            else
-                configScreen.crop = new ConfigScreen.Border(0, 0, 0, 0);
-            var mainWindow = new MainWindow(1, IntPtr.Zero, configScreen);
-            mainWindow.Show();
-            var mainWindow2 = new MainWindow(2, mainWindow._hWnd, configScreen);
-            mainWindow2.Show();
+            try
+            {
+                string path = args[1];
+                //check if file exists
+                if (!System.IO.File.Exists(path))
+                {
+                    MessageBox.Show("File not found: " + path);
+                    Shutdown();
+                }
+                string json = System.IO.File.ReadAllText(path);
+                JObject jObject = JObject.Parse(json);
+                //screenConfigs is list of ScreenConfig
+                int screenCount = jObject["screenConfigs"].Count();
+                ScreenConfig[] screenConfigs = new ScreenConfig[screenCount];
+                for (int i = 0; i < screenCount; i++)
+                    screenConfigs[i] = new ScreenConfig(jObject["screenConfigs"][i]);
+                for (int i = 0; i < screenCount; i++)
+                {
+                    var mainWindow = new MainWindow(_hWnd, screenConfigs[i]);
+                    mainWindow.Show();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                MessageBox.Show("Error: " + e.Message);
+                throw;
+            }
         }
     }
 }
